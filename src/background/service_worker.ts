@@ -198,6 +198,7 @@ function isAllowedExternalOrigin(url?: string): boolean {
     const parsed = new URL(url);
     if (ALLOWED_EXTERNAL_ORIGINS.includes(parsed.origin)) return true;
     if (parsed.hostname.endsWith('.flowtour.dev')) return true;
+    if (parsed.hostname.endsWith('.vercel.app')) return true;
   } catch {
     return false;
   }
