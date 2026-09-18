@@ -9,6 +9,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useToast } from './Toast';
+import { verifyLicenseKeyRemotely } from '../../shared/licenseService';
 
 const DODO_CHECKOUT_URL =
   process.env.NEXT_PUBLIC_DODO_PAYMENT_URL ||
@@ -49,9 +50,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanKey = inputKey.trim();
-    if (!cleanKey || cleanKey.length < 4) {
-      setErrorMsg('Please enter a valid FlowTour license key.');
+    const cleanKey = inputKey.trim().toUpperCase();
+    if (!cleanKey || cleanKey.length < 8) {
+      setErrorMsg('Please enter a valid FlowTour license key (minimum 8 characters).');
       return;
     }
 
@@ -59,6 +60,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setErrorMsg(null);
 
     try {
+      const verifyResult = await verifyLicenseKeyRemotely(cleanKey);
+
+      if (!verifyResult.valid) {
+        setErrorMsg(
+          verifyResult.message || 'Invalid license key. Please check your purchase receipt.'
+        );
+        setIsActivating(false);
+        return;
+      }
+
       const proPayload = {
         isProLicense: true,
         isPro: true,

@@ -48,16 +48,28 @@ function SuccessContent() {
 
   // Initialize or generate deterministic key if not supplied by Dodo Payments URL
   useEffect(() => {
+    let isMounted = true;
     if (queryKey) {
       setLicenseKey(queryKey);
     } else if (!licenseKey) {
       if (paymentId) {
-        // Derive clean deterministic key from Dodo payment ID
-        const cleanId = paymentId.replace(/^pay_/, "").toUpperCase().padEnd(12, "0");
-        const k1 = cleanId.substring(0, 4);
-        const k2 = cleanId.substring(4, 8);
-        const k3 = cleanId.substring(8, 12);
-        setLicenseKey(`FLOW-PRO-${k1}-${k2}-${k3}`);
+        // Fetch official cryptographically signed key from issue API
+        fetch(`/api/license/issue?payment_id=${encodeURIComponent(paymentId)}`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (isMounted && data?.licenseKey) {
+              setLicenseKey(data.licenseKey);
+            }
+          })
+          .catch(() => {
+            if (isMounted) {
+              const cleanId = paymentId.replace(/^pay_/, "").toUpperCase().padEnd(12, "0");
+              const k1 = cleanId.substring(0, 4);
+              const k2 = cleanId.substring(4, 8);
+              const k3 = cleanId.substring(8, 12);
+              setLicenseKey(`FLOW-PRO-${k1}-${k2}-${k3}`);
+            }
+          });
       } else {
         const randomHex = () =>
           Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -65,6 +77,9 @@ function SuccessContent() {
         setLicenseKey(fallbackKey);
       }
     }
+    return () => {
+      isMounted = false;
+    };
   }, [queryKey, paymentId, licenseKey]);
 
   // Attempt 1-Click handshake with FlowTour Chrome extension

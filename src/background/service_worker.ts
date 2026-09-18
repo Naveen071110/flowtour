@@ -2,6 +2,7 @@ import { MessagePayload, Step, Demo, RecordingState } from '../shared/types';
 import { APP_CONFIG } from '../shared/constants';
 import { saveDemo, appendStep, getRecordingState, setRecordingState, getDemo, runStorageGarbageCollection } from './storage';
 import { saveScreenshot, saveScreenshotDataUrl } from '../shared/idb';
+import { verifyLicenseKeyRemotely } from '../shared/licenseService';
 
 // Open side panel when user clicks the extension action icon
 chrome.sidePanel
@@ -262,6 +263,16 @@ async function handleExternalMessage(
         return { success: false, error: 'License key is missing or empty' };
       }
 
+      // Verify license authenticity before activating Pro in storage
+      const verification = await verifyLicenseKeyRemotely(licenseKey);
+      if (!verification.valid) {
+        console.warn('[FlowTour SW] Rejected external license activation. Invalid key:', licenseKey);
+        return {
+          success: false,
+          error: verification.message || 'Invalid or unverified FlowTour license key.',
+        };
+      }
+
       const proPayload = {
         isProLicense: true,
         isPro: true,
@@ -293,6 +304,37 @@ async function handleExternalMessage(
       return { success: false, error: `Unsupported external message type: ${type}` };
   }
 }
+
+/**
+ * Startup License Health Audit
+ * Automatically revokes Pro status if a payment is refunded, disputed, or cancelled
+ */
+async function auditStoredLicenseKey() {
+  try {
+    const syncData: Record<string, any> = await chrome.storage.sync.get(['isProLicense', 'licenseKey']).catch(() => ({}));
+    const localData: Record<string, any> = await chrome.storage.local.get(['isProLicense', 'licenseKey']).catch(() => ({}));
+    const activeKey = syncData?.licenseKey || localData?.licenseKey;
+    const isPro = Boolean(syncData?.isProLicense || localData?.isProLicense);
+
+    if (isPro && activeKey) {
+      const check = await verifyLicenseKeyRemotely(activeKey);
+      if (!check.valid) {
+        console.warn('[FlowTour SW] Stored license failed health audit. Reverting to Free:', activeKey);
+        const revokePayload = { isProLicense: false, isPro: false, licenseKey: '' };
+        await Promise.all([
+          chrome.storage.sync.set(revokePayload).catch(() => {}),
+          chrome.storage.local.set(revokePayload).catch(() => {}),
+        ]);
+      }
+    }
+  } catch (err) {
+    console.warn('[FlowTour SW] Error during license health audit:', err);
+  }
+}
+
+chrome.runtime.onStartup.addListener(() => {
+  auditStoredLicenseKey();
+});
 
 async function handleIncomingMessage(message: MessagePayload, sender: chrome.runtime.MessageSender): Promise<any> {
   switch (message.type) {
