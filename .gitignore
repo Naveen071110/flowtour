@@ -1,0 +1,18 @@
+﻿# Dependencies & Build Output
+node_modules/
+dist/
+.next/
+out/
+*.zip
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.production
+.env.development
+*.pem
+*.key
+
+# System Files
+.DS_Store
+Thumbs.db
