@@ -2,6 +2,7 @@ import { Muxer, ArrayBufferTarget } from 'mp4-muxer';
 import { Demo, Step } from './types';
 import { getScreenshot, getScreenshotBlob } from './idb';
 import { APP_CONFIG } from './constants';
+import { isProUser } from './licenseValidator';
 
 export interface VideoExportOptions {
   resolution: '1080p' | '4k' | '720p';
@@ -785,37 +786,25 @@ export async function renderDemoToVideo(
   options: VideoExportOptions,
   onProgress?: (progress: RenderProgress) => void
 ): Promise<Blob> {
-  const is4k = options.resolution === '4k';
+  // Strictly resolve Pro status via cryptographic token validator
+  const isPro = await isProUser();
+
+  // Enforce resolution: 4K strictly requires verified Pro token
+  const is4k = isPro && options.resolution === '4k';
   const targetZoom = options.zoomLevel ?? 1.4;
   const stepDurationMs = (options.stepDurationSeconds ?? 2.0) * 1000;
 
-  // Resolve Pro license status and custom brand logo
-  let isPro = options.isProLicense;
-  let customLogoUrl = options.customLogoUrl;
-  if (isPro === undefined && typeof chrome !== 'undefined') {
+  // Custom logo only allowed if user has authentic Pro token
+  let customLogoUrl = isPro ? options.customLogoUrl : undefined;
+  if (isPro && !customLogoUrl && typeof chrome !== 'undefined') {
     try {
-      let syncData: any = {};
-      let localData: any = {};
-      if (chrome.storage?.sync) {
-        syncData = await chrome.storage.sync.get(['isProLicense', 'isPro', 'customLogoUrl']);
-      }
-      if (chrome.storage?.local) {
-        localData = await chrome.storage.local.get(['isProLicense', 'isPro', 'customLogoUrl', 'customLogo']);
-      }
-      isPro = Boolean(
-        syncData?.isProLicense ||
-        syncData?.isPro ||
-        localData?.isProLicense ||
-        localData?.isPro
-      );
-      customLogoUrl = customLogoUrl || syncData?.customLogoUrl || localData?.customLogoUrl || localData?.customLogo;
-    } catch {
-      isPro = false;
-    }
+      const data = await chrome.storage.local.get(['customLogoUrl', 'customLogo']);
+      customLogoUrl = data?.customLogoUrl || data?.customLogo;
+    } catch {}
   }
   const customLogoImg = isPro && customLogoUrl ? await loadLogoImage(customLogoUrl) : null;
 
-  // Canvas Dimensions
+  // Canvas Dimensions: Non-Pro users cannot exceed 1080p
   let width = 1920;
   let height = 1080;
   if (is4k) {
@@ -826,8 +815,9 @@ export async function renderDemoToVideo(
     height = 720;
   }
 
-  // Requested FPS (4K defaults to 30fps for stability, 1080p/720p defaults to 60fps)
-  const requestedFps = options.fps ?? (is4k ? 30 : 60);
+  // Enforce FPS: Non-Pro users are strictly limited to 30 FPS
+  const maxAllowedFps = isPro ? 60 : 30;
+  const requestedFps = Math.min(options.fps ?? (is4k ? 30 : (isPro ? 60 : 30)), maxAllowedFps);
 
   // Use all steps from the demo so NO steps are skipped
   const allSteps = demo.steps;

@@ -8,6 +8,7 @@ import { RecordingView } from './components/RecordingView';
 import { SettingsModal } from './components/SettingsModal';
 import { Step } from '../shared/types';
 import { ToastProvider, useToast } from './components/Toast';
+import { isProUser } from '../shared/licenseValidator';
 
 const SidePanelContent: React.FC = () => {
   const { showToast } = useToast();
@@ -48,7 +49,7 @@ const SidePanelContent: React.FC = () => {
 
       if (chrome.storage?.sync) {
         try {
-          syncData = await chrome.storage.sync.get(['isProLicense', 'isPro', 'licenseKey', 'customLogoUrl']);
+          syncData = await chrome.storage.sync.get(['licenseKey', 'customLogoUrl']);
         } catch (e) {
           console.warn('[FlowTour] Failed reading storage.sync:', e);
         }
@@ -56,18 +57,14 @@ const SidePanelContent: React.FC = () => {
 
       if (chrome.storage?.local) {
         try {
-          localData = await chrome.storage.local.get(['isProLicense', 'isPro', 'licenseKey', 'customLogoUrl']);
+          localData = await chrome.storage.local.get(['licenseKey', 'customLogoUrl']);
         } catch (e) {
           console.warn('[FlowTour] Failed reading storage.local:', e);
         }
       }
 
-      const proActive = Boolean(
-        syncData?.isProLicense ||
-        syncData?.isPro ||
-        localData?.isProLicense ||
-        localData?.isPro
-      );
+      // Cryptographically validate Pro status
+      const proActive = await isProUser();
       const activeKey = syncData?.licenseKey || localData?.licenseKey || '';
       const activeLogo = syncData?.customLogoUrl || localData?.customLogoUrl || '';
 
@@ -85,6 +82,8 @@ const SidePanelContent: React.FC = () => {
     ) => {
       if (areaName === 'sync' || areaName === 'local') {
         if (
+          'proToken' in changes ||
+          'boundAccountId' in changes ||
           'isProLicense' in changes ||
           'isPro' in changes ||
           'licenseKey' in changes ||

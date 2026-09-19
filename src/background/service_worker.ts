@@ -3,6 +3,7 @@ import { APP_CONFIG } from '../shared/constants';
 import { saveDemo, appendStep, getRecordingState, setRecordingState, getDemo, runStorageGarbageCollection } from './storage';
 import { saveScreenshot, saveScreenshotDataUrl } from '../shared/idb';
 import { verifyLicenseKeyRemotely } from '../shared/licenseService';
+import { getChromeAccountId, isProUser } from '../shared/licenseValidator';
 
 // Open side panel when user clicks the extension action icon
 chrome.sidePanel
@@ -263,21 +264,30 @@ async function handleExternalMessage(
         return { success: false, error: 'License key is missing or empty' };
       }
 
-      // Verify license authenticity before activating Pro in storage
-      const verification = await verifyLicenseKeyRemotely(licenseKey);
+      // 1. Obtain current Chrome Account ID / Device ID
+      const accountId = await getChromeAccountId();
+
+      // 2. Verify license authenticity & obtain signed token
+      const verification = await verifyLicenseKeyRemotely(licenseKey, accountId);
       if (!verification.valid) {
-        console.warn('[FlowTour SW] Rejected external license activation. Invalid key:', licenseKey);
+        console.warn(
+          '[FlowTour SW] Rejected external license activation. Invalid key or bound to another account:',
+          licenseKey
+        );
         return {
           success: false,
           error: verification.message || 'Invalid or unverified FlowTour license key.',
+          code: verification.error,
         };
       }
 
       const proPayload = {
+        proToken: verification.proToken || '',
+        licenseKey: licenseKey,
+        boundAccountId: accountId,
+        proActivatedAt: Date.now(),
         isProLicense: true,
         isPro: true,
-        licenseKey: licenseKey,
-        proActivatedAt: Date.now(),
       };
 
       // Dual write to chrome.storage.sync (for Chrome account cloud replication)
@@ -307,20 +317,24 @@ async function handleExternalMessage(
 
 /**
  * Startup License Health Audit
- * Automatically revokes Pro status if a payment is refunded, disputed, or cancelled
+ * Automatically revokes Pro status if token is missing or tampered
  */
 async function auditStoredLicenseKey() {
   try {
-    const syncData: Record<string, any> = await chrome.storage.sync.get(['isProLicense', 'licenseKey']).catch(() => ({}));
-    const localData: Record<string, any> = await chrome.storage.local.get(['isProLicense', 'licenseKey']).catch(() => ({}));
-    const activeKey = syncData?.licenseKey || localData?.licenseKey;
-    const isPro = Boolean(syncData?.isProLicense || localData?.isProLicense);
-
-    if (isPro && activeKey) {
-      const check = await verifyLicenseKeyRemotely(activeKey);
-      if (!check.valid) {
-        console.warn('[FlowTour SW] Stored license failed health audit. Reverting to Free:', activeKey);
-        const revokePayload = { isProLicense: false, isPro: false, licenseKey: '' };
+    const isPro = await isProUser();
+    if (!isPro) {
+      // Check if legacy or tampered isProLicense flag exists without a valid proToken
+      const localData: Record<string, any> = await chrome.storage.local
+        .get(['isProLicense', 'proToken'])
+        .catch(() => ({}));
+      if (localData?.isProLicense && !localData?.proToken) {
+        console.warn('[FlowTour SW] Tampered or missing token detected in storage. Revoking Pro access.');
+        const revokePayload = {
+          isProLicense: false,
+          isPro: false,
+          proToken: '',
+          boundAccountId: '',
+        };
         await Promise.all([
           chrome.storage.sync.set(revokePayload).catch(() => {}),
           chrome.storage.local.set(revokePayload).catch(() => {}),

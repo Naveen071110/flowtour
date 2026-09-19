@@ -6,26 +6,36 @@
 export interface LicenseValidationResult {
   valid: boolean;
   message?: string;
+  error?: string;
   plan?: string;
+  proToken?: string;
+  exp?: number;
   verifiedAt?: string;
 }
 
 export async function verifyLicenseKeyRemotely(
-  key: string
+  key: string,
+  accountId?: string
 ): Promise<LicenseValidationResult> {
   const cleanKey = key.trim().toUpperCase();
   if (!cleanKey || cleanKey.length < 8) {
     return {
       valid: false,
+      error: 'INVALID_KEY',
       message: 'License key must be at least 8 characters.',
     };
   }
 
+  const queryParams = new URLSearchParams({
+    key: cleanKey,
+    accountId: accountId || '',
+  });
+
   // 1. Try local dev and production verification endpoints
   const endpoints = [
-    `http://localhost:3000/api/license/verify?key=${encodeURIComponent(cleanKey)}`,
-    `https://flowtour.vercel.app/api/license/verify?key=${encodeURIComponent(cleanKey)}`,
-    `https://flowtour.dev/api/license/verify?key=${encodeURIComponent(cleanKey)}`,
+    `http://localhost:3000/api/license/verify?${queryParams.toString()}`,
+    `https://flowtour.vercel.app/api/license/verify?${queryParams.toString()}`,
+    `https://flowtour.dev/api/license/verify?${queryParams.toString()}`,
   ];
 
   for (const url of endpoints) {
@@ -42,13 +52,34 @@ export async function verifyLicenseKeyRemotely(
           return {
             valid: true,
             plan: data.plan || 'pro_lifetime',
+            proToken: data.proToken,
+            exp: data.exp,
             verifiedAt: data.verifiedAt,
           };
         }
+      } else if (res.status === 403) {
+        const data = await res.json().catch(() => null);
+        return {
+          valid: false,
+          error: data?.error || 'KEY_BOUND_TO_ANOTHER_ACCOUNT',
+          message:
+            data?.message ||
+            'This license key is linked to a different Chrome account.',
+        };
+      } else if (res.status === 429) {
+        const data = await res.json().catch(() => null);
+        return {
+          valid: false,
+          error: data?.error || 'RATE_LIMIT_EXCEEDED',
+          message:
+            data?.message ||
+            'Too many verification attempts. Please try again in a minute.',
+        };
       } else if (res.status === 400 || res.status === 404) {
         const data = await res.json().catch(() => null);
         return {
           valid: false,
+          error: data?.error || 'INVALID_KEY',
           message:
             data?.message ||
             'Invalid or unrecognized FlowTour license key.',

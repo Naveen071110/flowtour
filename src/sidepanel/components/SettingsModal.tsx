@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useToast } from './Toast';
 import { verifyLicenseKeyRemotely } from '../../shared/licenseService';
+import { getChromeAccountId } from '../../shared/licenseValidator';
 
 const DODO_CHECKOUT_URL =
   process.env.NEXT_PUBLIC_DODO_PAYMENT_URL ||
@@ -60,21 +61,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setErrorMsg(null);
 
     try {
-      const verifyResult = await verifyLicenseKeyRemotely(cleanKey);
+      // 1. Obtain current Chrome Account ID / Device ID
+      const accountId = await getChromeAccountId();
+
+      // 2. Verify with backend & obtain server-signed proToken bound to this account
+      const verifyResult = await verifyLicenseKeyRemotely(cleanKey, accountId);
 
       if (!verifyResult.valid) {
-        setErrorMsg(
-          verifyResult.message || 'Invalid license key. Please check your purchase receipt.'
-        );
+        if (verifyResult.error === 'KEY_BOUND_TO_ANOTHER_ACCOUNT') {
+          setErrorMsg('This license key is linked to a different Chrome account.');
+        } else if (verifyResult.error === 'INVALID_KEY') {
+          setErrorMsg('Invalid license key format.');
+        } else if (verifyResult.error === 'RATE_LIMIT_EXCEEDED') {
+          setErrorMsg('Too many verification attempts. Please wait a minute.');
+        } else {
+          setErrorMsg(
+            verifyResult.message || 'Invalid license key. Please check your purchase receipt.'
+          );
+        }
         setIsActivating(false);
         return;
       }
 
+      // 3. Store Signed Token and Bound Account into storage
       const proPayload = {
+        proToken: verifyResult.proToken || '',
+        licenseKey: cleanKey,
+        boundAccountId: accountId,
+        proActivatedAt: Date.now(),
         isProLicense: true,
         isPro: true,
-        licenseKey: cleanKey,
-        proActivatedAt: Date.now(),
       };
 
       if (typeof chrome !== 'undefined') {
@@ -101,6 +117,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleDeactivate = async () => {
     try {
       const clearPayload = {
+        proToken: '',
+        boundAccountId: '',
         isProLicense: false,
         isPro: false,
         licenseKey: '',

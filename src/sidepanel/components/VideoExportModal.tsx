@@ -16,6 +16,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useToast } from './Toast';
+import { isProUser } from '../../shared/licenseValidator';
 
 interface VideoExportModalProps {
   demo: Demo;
@@ -68,34 +69,12 @@ export const VideoExportModal: React.FC<VideoExportModalProps> = ({
     };
   }, [videoBlobUrl]);
 
-  // Synchronize Pro status from chrome.storage.sync and local on modal open
+  // Synchronize Pro status via cryptographic token check on modal open
   useEffect(() => {
     if (!isOpen) return;
 
     const syncProStatus = async () => {
-      let proActive = Boolean(isProLicense);
-
-      if (typeof chrome !== 'undefined') {
-        try {
-          let syncData: any = {};
-          let localData: any = {};
-          if (chrome.storage?.sync) {
-            syncData = await chrome.storage.sync.get(['isProLicense', 'isPro']);
-          }
-          if (chrome.storage?.local) {
-            localData = await chrome.storage.local.get(['isProLicense', 'isPro']);
-          }
-          proActive = Boolean(
-            syncData.isProLicense ||
-            syncData.isPro ||
-            localData.isProLicense ||
-            localData.isPro ||
-            isProLicense
-          );
-        } catch (err) {
-          console.warn('[FlowTour] Failed checking Pro status:', err);
-        }
-      }
+      const proActive = await isProUser();
 
       setIsPro(proActive);
       if (!proActive) {
@@ -107,7 +86,7 @@ export const VideoExportModal: React.FC<VideoExportModalProps> = ({
     };
 
     syncProStatus();
-  }, [isOpen, isProLicense]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
