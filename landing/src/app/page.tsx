@@ -68,7 +68,7 @@ export default function LandingPage() {
 
   const dodoCheckoutUrl =
     process.env.NEXT_PUBLIC_DODO_PAYMENT_URL ||
-    "https://test.checkout.dodopayments.com/buy/pdt_0NnO9Yu0LqYXonkP2yh8E?quantity=1&redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fsuccess";
+    "https://checkout.dodopayments.com/buy/pdt_0No1lqCYBUrKAshq17fdl?quantity=1&redirect_url=https%3A%2F%2Fflowtour.vercel.app%2Fsuccess";
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 selection:bg-zinc-800 selection:text-white relative overflow-hidden font-sans">
