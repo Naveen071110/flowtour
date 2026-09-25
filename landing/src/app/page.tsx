@@ -50,27 +50,27 @@ function ProductHuntBadgeLogo({ className = "w-4 h-4" }: { className?: string })
 // Real Recorded FlowTour Demos
 const DEMO_VIDEOS = [
   {
-    id: "workflow",
-    title: "App Workflow (1080p)",
-    src: "/new-1080p-1.4x.mp4",
-    urlDisplay: "https://app.flowtour.dev/dashboard",
+    id: "gitcontextgen",
+    title: "GitContextGen (1080p)",
+    src: "/gitcontextgen-demo.mp4",
+    urlDisplay: "https://gitcontextgen.com",
     badge: "1080p 60fps • Auto-Zoom",
-    footerTitle: "Real Workflow Captured with FlowTour",
+    footerTitle: "GitContextGen Product Walkthrough Captured with FlowTour",
     footerDesc: "60fps camera tracking, auto-focus zoom & click ripple animations",
   },
   {
-    id: "console",
-    title: "Cloud Console (1080p)",
-    src: "/supabase-preview.mp4",
-    urlDisplay: "https://console.cloud.com/project",
+    id: "workflow",
+    title: "App Workflow (1080p)",
+    src: "/new-1080p-1.4x.mp4",
+    urlDisplay: "https://app.ahrefs.com/dashboard",
     badge: "1080p 60fps • Click Focus",
-    footerTitle: "Cloud Dashboard & CLI Flow Captured with FlowTour",
+    footerTitle: "SaaS Dashboard Flow Captured with FlowTour",
     footerDesc: "Smooth camera panning, step pill badges & 100% client-side export",
   },
 ];
 
 export default function LandingPage() {
-  const [selectedDemoId, setSelectedDemoId] = useState<string>("workflow");
+  const [selectedDemoId, setSelectedDemoId] = useState<string>("gitcontextgen");
   const [copiedCode, setCopiedCode] = useState(false);
   const [codeTab, setCodeTab] = useState<"react" | "html">("react");
 
@@ -249,7 +249,7 @@ export default function LandingPage() {
             <a
               href="#demo"
               onClick={() => {
-                setSelectedDemoId("workflow");
+                setSelectedDemoId("gitcontextgen");
                 posthog.capture('clicked_view_demo');
               }}
               className="w-full sm:w-auto h-10 px-5 rounded-md border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900 hover:border-zinc-700 text-zinc-300 font-medium text-xs flex items-center justify-center gap-2 transition-colors"
