@@ -157,6 +157,30 @@ function removeRecordingHUD(): void {
   }
 }
 
+let activeRipples: HTMLElement[] = [];
+
+function clearActiveRipples(): void {
+  for (const r of activeRipples) {
+    try {
+      r.remove();
+    } catch {}
+  }
+  activeRipples = [];
+}
+
+function hideHUDForCapture(): void {
+  if (hudHost) {
+    hudHost.style.display = 'none';
+  }
+  clearActiveRipples();
+}
+
+function restoreHUDAfterCapture(): void {
+  if (hudHost) {
+    hudHost.style.display = 'block';
+  }
+}
+
 /**
  * Creates an animated visual ripple circle at click location for user feedback
  */
@@ -178,6 +202,7 @@ function showClickRipple(x: number, y: number): void {
   ripple.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out';
 
   document.documentElement.appendChild(ripple);
+  activeRipples.push(ripple);
 
   requestAnimationFrame(() => {
     ripple.style.transform = 'scale(1.6)';
@@ -185,7 +210,10 @@ function showClickRipple(x: number, y: number): void {
   });
 
   setTimeout(() => {
-    ripple.remove();
+    try {
+      ripple.remove();
+    } catch {}
+    activeRipples = activeRipples.filter((r) => r !== ripple);
   }, 450);
 }
 
@@ -234,6 +262,18 @@ chrome.runtime.onMessage.addListener((message: MessagePayload, _sender, sendResp
       return false;
     }
 
+    if (message.type === 'PRE_CAPTURE') {
+      hideHUDForCapture();
+      sendResponse({ status: 'hidden' });
+      return false;
+    }
+
+    if (message.type === 'POST_CAPTURE') {
+      restoreHUDAfterCapture();
+      sendResponse({ status: 'restored' });
+      return false;
+    }
+
     if (message.type === 'TOGGLE_RECORDER') {
       const { active } = message.payload;
       const initialStepCount = (message.payload as any)?.initialStepCount;
@@ -249,6 +289,7 @@ chrome.runtime.onMessage.addListener((message: MessagePayload, _sender, sendResp
       } else {
         recorder.stop();
         removeRecordingHUD();
+        clearActiveRipples();
         stepCounter = 0;
         sendResponse({ status: 'stopped' });
       }

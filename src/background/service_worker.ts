@@ -517,15 +517,22 @@ async function handleIncomingMessage(message: MessagePayload, sender: chrome.run
           preScreenshotKey = currentDemo?.initialScreenshotId || '';
         }
 
-        // Configurable delay (100-150ms) to allow DOM transitions/animations to finish rendering
-        if (APP_CONFIG.RECORDING.CAPTURE_DELAY_MS > 0) {
-          await new Promise((resolve) => setTimeout(resolve, APP_CONFIG.RECORDING.CAPTURE_DELAY_MS));
-        }
-
         // Determine target tab, window ID and URL from sender or active recording state
         const targetTabId = sender.tab?.id ?? state.activeTabId;
         let windowId: number | undefined = sender.tab?.windowId;
         let tabUrl: string = sender.tab?.url || '';
+
+        // 1. Temporarily hide HUD and clear active ripples on the recording tab
+        if (targetTabId) {
+          try {
+            await chrome.tabs.sendMessage(targetTabId, { type: 'PRE_CAPTURE' });
+          } catch {}
+        }
+
+        // 2. Settle delay (320ms) to allow SPA DOM transitions/animations to finish rendering
+        if (APP_CONFIG.RECORDING.CAPTURE_DELAY_MS > 0) {
+          await new Promise((resolve) => setTimeout(resolve, APP_CONFIG.RECORDING.CAPTURE_DELAY_MS));
+        }
 
         if (!tabUrl && targetTabId) {
           try {
@@ -565,6 +572,11 @@ async function handleIncomingMessage(message: MessagePayload, sender: chrome.run
         let postDataUrl = '';
         if (!isRestricted) {
           postDataUrl = await captureTabScreenshot(windowId);
+        }
+
+        // 3. Immediately restore HUD on the recording tab
+        if (targetTabId) {
+          chrome.tabs.sendMessage(targetTabId, { type: 'POST_CAPTURE' }).catch(() => {});
         }
 
         // Strictly await IndexedDB save of the post-click screenshot

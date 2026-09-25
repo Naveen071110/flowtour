@@ -27,7 +27,7 @@ export const APP_CONFIG = {
   
   // UI & Recording parameters
   RECORDING: {
-    CAPTURE_DELAY_MS: 150, // Delay after click before screenshot to let UI settle
+    CAPTURE_DELAY_MS: 320, // Delay after click before screenshot to let SPA UI & animations settle
     MAX_SCREENSHOT_WIDTH: 1440,
     JPEG_QUALITY: 0.96,
     THUMBNAIL_WIDTH: 480,

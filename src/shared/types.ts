@@ -90,7 +90,9 @@ export type MessagePayload =
   | { type: 'RECORDING_STATE_RESPONSE'; payload: RecordingState }
   | { type: 'STEP_ADDED'; payload: { demoId: string; step: Step } }
   | { type: 'RECORDER_STATUS'; payload: { isRecording: boolean } }
-  | { type: 'SHOW_TOAST'; payload: { message: string } };
+  | { type: 'SHOW_TOAST'; payload: { message: string } }
+  | { type: 'PRE_CAPTURE' }
+  | { type: 'POST_CAPTURE' };
 
 export interface CapturedClickEvent {
   selectorResult: SelectorResult;

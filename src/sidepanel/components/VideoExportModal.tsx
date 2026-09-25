@@ -356,24 +356,33 @@ export const VideoExportModal: React.FC<VideoExportModalProps> = ({
                   Camera Zoom Style
                 </label>
                 <span className="text-[10px] font-mono text-zinc-400">
-                  {zoomLevel === 1.0 ? 'Full' : `${zoomLevel}x click focus`}
+                  {zoomLevel === 1.0
+                    ? 'Full View (No Zoom)'
+                    : zoomLevel === 1.25
+                    ? '1.25x Subtle Zoom'
+                    : zoomLevel === 1.4
+                    ? '1.4x Balanced Zoom'
+                    : zoomLevel === 1.6
+                    ? '1.6x Focused Zoom'
+                    : '1.8x Close-up Zoom'}
                 </span>
               </div>
               <div className="grid grid-cols-5 gap-1 font-mono">
                 {[
-                  { label: '1.0x', val: 1.0 },
-                  { label: '1.25x', val: 1.25 },
-                  { label: '1.4x', val: 1.4 },
-                  { label: '1.6x', val: 1.6 },
-                  { label: '1.8x', val: 1.8 },
+                  { label: '1.0x', val: 1.0, title: 'Full overview without camera zoom or pan' },
+                  { label: '1.25x', val: 1.25, title: 'Subtle 25% zoom on click targets' },
+                  { label: '1.4x', val: 1.4, title: 'Balanced 40% zoom (Default)' },
+                  { label: '1.6x', val: 1.6, title: 'Focused 60% zoom for UI details' },
+                  { label: '1.8x', val: 1.8, title: 'Close-up 80% zoom for small icons/buttons' },
                 ].map((item) => (
                   <button
                     key={item.val}
                     type="button"
+                    title={item.title}
                     onClick={() => setZoomLevel(item.val)}
                     className={`py-1.5 px-1 rounded-md text-[11px] text-center transition-colors ${
                       zoomLevel === item.val
-                        ? 'bg-zinc-100 text-zinc-950 font-semibold'
+                        ? 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm'
                         : 'bg-zinc-900 border border-zinc-800/80 text-zinc-400 hover:text-zinc-200'
                     }`}
                   >
@@ -385,22 +394,32 @@ export const VideoExportModal: React.FC<VideoExportModalProps> = ({
 
             {/* Step Duration */}
             <div>
-              <label className="block text-[10px] font-mono uppercase tracking-wider text-zinc-500 mb-1.5">
-                Pacing per Step
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                  Pacing per Step
+                </label>
+                <span className="text-[10px] font-mono text-zinc-400">
+                  {stepDuration === 1.5
+                    ? '1.5s Fast & Snappy'
+                    : stepDuration === 2.0
+                    ? '2.0s Balanced Pacing'
+                    : '3.0s Relaxed & Detailed'}
+                </span>
+              </div>
               <div className="grid grid-cols-3 gap-1.5 font-mono">
                 {[
-                  { label: '1.5s', val: 1.5 },
-                  { label: '2.0s', val: 2.0 },
-                  { label: '3.0s', val: 3.0 },
+                  { label: '1.5s Fast', val: 1.5, title: 'Fast pacing for quick social media clips' },
+                  { label: '2.0s Balanced', val: 2.0, title: 'Standard pacing for product demos' },
+                  { label: '3.0s Relaxed', val: 3.0, title: 'Detailed pacing for in-depth tutorials' },
                 ].map((item) => (
                   <button
                     key={item.val}
                     type="button"
+                    title={item.title}
                     onClick={() => setStepDuration(item.val)}
                     className={`py-1.5 px-2 rounded-md text-xs text-center transition-colors ${
                       stepDuration === item.val
-                        ? 'bg-zinc-100 text-zinc-950 font-semibold'
+                        ? 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm'
                         : 'bg-zinc-900 border border-zinc-800/80 text-zinc-400 hover:text-zinc-200'
                     }`}
                   >

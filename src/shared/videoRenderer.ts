@@ -636,62 +636,86 @@ function drawWatermarkOrLogo(
     return;
   }
 
-  // Free Tier: Subtle glassmorphism watermark badge (Made with FlowTour)
+  // Free Tier: Prominent, uncroppable glassmorphism watermark card with stacked icon symbol
   ctx.save();
 
-  const fontSize = Math.round(11.5 * scale);
-  const fontStr = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-  ctx.font = fontStr;
+  const badgeW = Math.round(180 * scale);
+  const badgeH = Math.round(76 * scale);
+  const badgeX = canvasW - badgeW - Math.round(24 * scale);
+  const badgeY = canvasH - badgeH - Math.round(24 * scale);
+  const radius = Math.round(14 * scale);
 
-  const text = 'Made with FlowTour';
-  const textMetrics = ctx.measureText(text);
-  const textW = textMetrics.width;
+  // 1. Drop shadow for strong depth against light or dark web pages
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+  ctx.shadowBlur = 18 * scale;
+  ctx.shadowOffsetY = 6 * scale;
 
-  const dotRadius = 3 * scale;
-  const padX = 10 * scale;
-  const padY = 5.5 * scale;
-  const badgeH = Math.round(fontSize + padY * 2);
-  const badgeW = Math.round(padX * 2 + dotRadius * 2 + 7 * scale + textW);
-
-  const badgeX = canvasW - badgeW - 16 * scale;
-  const badgeY = canvasH - badgeH - 16 * scale;
-  const radius = 6 * scale;
-
-  // 1. Subtle drop shadow
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-  ctx.shadowBlur = 10 * scale;
-  ctx.shadowOffsetY = 3 * scale;
-
-  // 2. Glassmorphism background pill (bg-black/60)
+  // 2. Glassmorphism background card
   ctx.beginPath();
   ctx.roundRect(badgeX, badgeY, badgeW, badgeH, radius);
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.60)';
+  const cardGradient = ctx.createLinearGradient(badgeX, badgeY, badgeX, badgeY + badgeH);
+  cardGradient.addColorStop(0, 'rgba(15, 23, 42, 0.94)'); // slate-900
+  cardGradient.addColorStop(1, 'rgba(2, 6, 23, 0.96)');  // slate-950
+  ctx.fillStyle = cardGradient;
   ctx.fill();
 
-  // 3. Border: 1px border-white/20
+  // 3. Subtle glowing violet-indigo border
   ctx.shadowColor = 'transparent';
-  ctx.lineWidth = Math.max(1, 1 * scale);
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.20)';
+  ctx.lineWidth = Math.max(1, 1.2 * scale);
+  ctx.strokeStyle = 'rgba(99, 102, 241, 0.35)';
   ctx.stroke();
 
-  // 4. Clean emerald glowing accent dot
-  const dotCenterX = badgeX + padX + dotRadius;
-  const dotCenterY = badgeY + badgeH / 2;
+  // 4. FlowTour Brand Icon Symbol (centered above text)
+  const iconSize = Math.round(24 * scale);
+  const iconX = badgeX + (badgeW - iconSize) / 2;
+  const iconY = badgeY + Math.round(10 * scale);
 
-  ctx.shadowColor = 'rgba(16, 185, 129, 0.7)';
-  ctx.shadowBlur = 5 * scale;
+  // Icon squircle container with brand gradient
+  const iconGrad = ctx.createLinearGradient(iconX, iconY, iconX + iconSize, iconY + iconSize);
+  iconGrad.addColorStop(0, '#6366f1'); // Indigo
+  iconGrad.addColorStop(1, '#a855f7'); // Purple
   ctx.beginPath();
-  ctx.arc(dotCenterX, dotCenterY, dotRadius, 0, Math.PI * 2);
-  ctx.fillStyle = '#10b981';
+  ctx.roundRect(iconX, iconY, iconSize, iconSize, Math.round(6 * scale));
+  ctx.fillStyle = iconGrad;
   ctx.fill();
 
-  // 5. Text: text-white/90 font-sans
+  // Inner vector flow emblem (stylized 'F' + pulse node)
+  ctx.beginPath();
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = Math.max(1.5, 2 * scale);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  // Vertical stem
+  ctx.moveTo(iconX + 7 * scale, iconY + 6 * scale);
+  ctx.lineTo(iconX + 7 * scale, iconY + 18 * scale);
+  // Top bar
+  ctx.moveTo(iconX + 7 * scale, iconY + 7.5 * scale);
+  ctx.lineTo(iconX + 16.5 * scale, iconY + 7.5 * scale);
+  // Mid bar
+  ctx.moveTo(iconX + 7 * scale, iconY + 12 * scale);
+  ctx.lineTo(iconX + 13.5 * scale, iconY + 12 * scale);
+  ctx.stroke();
+
+  // Glowing turquoise accent dot on emblem
+  ctx.beginPath();
+  ctx.arc(iconX + 16.5 * scale, iconY + 16.5 * scale, 2 * scale, 0, Math.PI * 2);
+  ctx.fillStyle = '#38bdf8';
+  ctx.shadowColor = 'rgba(56, 189, 248, 0.8)';
+  ctx.shadowBlur = 4 * scale;
+  ctx.fill();
+
+  // 5. Brand Title: "FlowTour"
   ctx.shadowColor = 'transparent';
-  ctx.font = fontStr;
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.90)';
-  ctx.textAlign = 'left';
+  ctx.font = `700 ${Math.round(13.5 * scale)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, dotCenterX + dotRadius + 6 * scale, dotCenterY);
+  ctx.fillText('FlowTour', badgeX + badgeW / 2, badgeY + Math.round(46 * scale));
+
+  // 6. Subtitle: "Made with FlowTour"
+  ctx.font = `500 ${Math.round(9.5 * scale)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+  ctx.fillStyle = 'rgba(148, 163, 184, 0.85)'; // slate-400
+  ctx.fillText('Made with FlowTour', badgeX + badgeW / 2, badgeY + Math.round(62 * scale));
 
   ctx.restore();
 }

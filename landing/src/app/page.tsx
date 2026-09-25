@@ -25,6 +25,27 @@ import {
 const CHROME_STORE_URL =
   "https://chromewebstore.google.com/detail/flowtour-interactive-demo/emaghcilmigcakcnnfonmgbfcddhikki?hl=en-US&utm_source=ext_sidebar";
 const GITHUB_URL = "https://github.com/Naveen071110";
+const PRODUCT_HUNT_URL = "https://www.producthunt.com/products/flowtour";
+
+function ProductHuntIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M13.6 13.87h-3.32V8.13h3.32c1.58 0 2.87 1.29 2.87 2.87s-1.29 2.87-2.87 2.87zM12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm1.6 15.87h-3.32v4.13H8.28V6.13h5.32c2.68 0 4.87 2.19 4.87 4.87s-2.19 4.87-4.87 4.87z" />
+    </svg>
+  );
+}
+
+function ProductHuntBadgeLogo({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 40 40" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="20" fill="#FF6154" />
+      <path
+        d="M22.6667 21.3333H17.3333V14.6667H22.6667C24.5076 14.6667 26 16.159 26 18C26 19.841 24.5076 21.3333 22.6667 21.3333ZM22.6667 12H14.6667V28H17.3333V24H22.6667C25.9805 24 28.6667 21.3137 28.6667 18C28.6667 14.6863 25.9805 12 22.6667 12Z"
+        fill="white"
+      />
+    </svg>
+  );
+}
 
 // Real Recorded FlowTour Demos
 const DEMO_VIDEOS = [
@@ -114,6 +135,16 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-3">
             <a
+              href={PRODUCT_HUNT_URL}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => posthog.capture('clicked_product_hunt_navbar')}
+              className="text-zinc-400 hover:text-[#FF6154] transition-colors hidden sm:block p-1"
+              title="View FlowTour on Product Hunt"
+            >
+              <ProductHuntIcon className="w-4 h-4" />
+            </a>
+            <a
               href={GITHUB_URL}
               target="_blank"
               rel="noreferrer"
@@ -141,17 +172,38 @@ export default function LandingPage() {
             2. HERO SECTION
         -------------------------------------------------------------- */}
         <section className="relative pt-16 pb-20 md:pt-24 md:pb-28 px-4 sm:px-6 max-w-5xl mx-auto text-center">
-          {/* Badge */}
+          {/* Product Hunt Announcement & Launch Pill */}
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="border border-zinc-800 bg-zinc-900/60 text-zinc-400 text-xs font-mono px-3 py-1 rounded-full mb-6 inline-flex items-center gap-2"
+            className="mb-6 flex flex-wrap items-center justify-center gap-2.5"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Developer-First Chrome Extension</span>
-            <span className="text-zinc-700">•</span>
-            <span className="text-zinc-500">Zero Backend</span>
+            <a
+              href={PRODUCT_HUNT_URL}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => posthog.capture('clicked_product_hunt_hero_pill')}
+              className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#FF6154]/30 bg-[#FF6154]/10 hover:bg-[#FF6154]/20 hover:border-[#FF6154]/60 transition-all text-xs font-mono text-zinc-200 shadow-[0_0_20px_-4px_rgba(255,97,84,0.25)] hover:shadow-[0_0_25px_-2px_rgba(255,97,84,0.4)]"
+            >
+              <ProductHuntBadgeLogo className="w-4 h-4 shrink-0" />
+              <span className="text-[#FF6154] font-semibold tracking-wide text-[11px]">PRODUCT HUNT</span>
+              <span className="text-zinc-600">•</span>
+              <span className="text-zinc-200 group-hover:text-white transition-colors">
+                Featured on Product Hunt
+              </span>
+              <span className="text-[#FF6154] font-medium flex items-center group-hover:translate-x-0.5 transition-transform text-[11px]">
+                <span>Support us</span>
+                <ChevronRight className="w-3 h-3 ml-0.5" />
+              </span>
+            </a>
+
+            <div className="hidden sm:inline-flex items-center gap-2 border border-zinc-800 bg-zinc-900/60 text-zinc-400 text-xs font-mono px-3 py-1.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Developer-First Chrome Extension</span>
+              <span className="text-zinc-700">•</span>
+              <span className="text-zinc-500">Zero Backend</span>
+            </div>
           </motion.div>
 
           {/* Headline */}
@@ -176,7 +228,7 @@ export default function LandingPage() {
             landing page walkthroughs.
           </motion.p>
 
-          {/* Dual CTAs */}
+          {/* Action CTAs */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -205,6 +257,44 @@ export default function LandingPage() {
               <Play className="w-3 h-3 text-emerald-400 fill-current" />
               <span>Watch in Action</span>
             </a>
+
+            <a
+              href={PRODUCT_HUNT_URL}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => posthog.capture('clicked_product_hunt_hero_button')}
+              className="w-full sm:w-auto h-10 px-4 rounded-md border border-[#FF6154]/30 bg-zinc-950/80 hover:bg-[#FF6154]/10 hover:border-[#FF6154]/60 text-zinc-200 hover:text-white font-medium text-xs flex items-center justify-center gap-2 transition-all group"
+            >
+              <ProductHuntBadgeLogo className="w-4 h-4 shrink-0" />
+              <span>Review on Product Hunt</span>
+              <ExternalLink className="w-3 h-3 text-zinc-500 group-hover:text-[#FF6154] transition-colors" />
+            </a>
+          </motion.div>
+
+          {/* Official Product Hunt Badge Embed */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+            className="mt-6 flex justify-center"
+          >
+            <a
+              href="https://www.producthunt.com/products/flowtour?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-flowtour"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => posthog.capture('clicked_product_hunt_embed_badge')}
+              className="inline-block transition-transform hover:scale-105 filter drop-shadow-[0_4px_16px_rgba(255,97,84,0.18)]"
+              title="FlowTour on Product Hunt"
+            >
+              <img
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1257195&theme=dark&t=1790361837290"
+                alt="FlowTour - Turn web app clicks into interactive demos & 4K videos | Product Hunt"
+                style={{ width: "250px", height: "54px" }}
+                width={250}
+                height={54}
+                className="h-[50px] w-auto sm:h-[54px]"
+              />
+            </a>
           </motion.div>
 
           {/* Micro trust pills */}
@@ -212,7 +302,7 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs font-mono text-zinc-500"
+            className="mt-6 flex flex-wrap items-center justify-center gap-6 text-xs font-mono text-zinc-500"
           >
             <div className="flex items-center gap-1.5">
               <Check className="w-3.5 h-3.5 text-zinc-400" />
@@ -226,6 +316,16 @@ export default function LandingPage() {
               <Check className="w-3.5 h-3.5 text-zinc-400" />
               <span>Export 3KB React Tour or MP4</span>
             </div>
+            <a
+              href={PRODUCT_HUNT_URL}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => posthog.capture('clicked_product_hunt_trust_pill')}
+              className="flex items-center gap-1.5 hover:text-zinc-300 transition-colors group"
+            >
+              <ProductHuntBadgeLogo className="w-3.5 h-3.5 shrink-0" />
+              <span className="text-zinc-400 group-hover:text-zinc-200">Product Hunt Community</span>
+            </a>
           </motion.div>
 
           {/* -------------------------------------------------------------
@@ -626,6 +726,16 @@ export default function LandingPage() {
                   <Github className="w-3.5 h-3.5" />
                   <span>GitHub</span>
                 </a>
+                <a
+                  href={PRODUCT_HUNT_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => posthog.capture('clicked_product_hunt_maker_story')}
+                  className="hover:text-[#FF6154] transition-colors flex items-center gap-1"
+                >
+                  <ProductHuntIcon className="w-3.5 h-3.5 text-[#FF6154]" />
+                  <span>Product Hunt</span>
+                </a>
               </div>
               <span>Open-First</span>
             </div>
@@ -806,6 +916,15 @@ export default function LandingPage() {
               </a>
               <a href="/privacy" className="hover:text-zinc-300 transition-colors">
                 Privacy
+              </a>
+              <a
+                href={PRODUCT_HUNT_URL}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => posthog.capture('clicked_product_hunt_footer')}
+                className="hover:text-zinc-300 transition-colors"
+              >
+                Product Hunt
               </a>
               <a
                 href={GITHUB_URL}
